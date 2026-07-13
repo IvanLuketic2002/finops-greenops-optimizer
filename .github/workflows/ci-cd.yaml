@@ -64,4 +64,5 @@ jobs:
           image-ref: 'optimizer-api:${{ github.sha }}'
           format: 'table'
           severity: 'CRITICAL,HIGH'
-          exit-code: '1' # Blokira pipeline ako slika ima High/Critical ranjivosti (npr. u python:3.11-slim)
+          ignore-unfixed: true # Ne obaraj build za ranjivosti koje još uvek nemaju zakrpu
+          exit-code: '1'
