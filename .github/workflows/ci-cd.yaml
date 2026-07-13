@@ -65,4 +65,4 @@ jobs:
           format: 'table'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
-          exit-code: '0' # Promenjeno sa '1' na '0' da ne ruši build
+          exit-code: '1'
