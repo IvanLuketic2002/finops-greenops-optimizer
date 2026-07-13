@@ -1,24 +1,18 @@
-# --- Stage 1: Build zavisnosti ---
-FROM python:3.11-slim AS builder
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-# Instaliramo pakete u lokalni folder .local
-RUN pip install --no-cache-dir --user -r requirements.txt
-
 # --- Stage 2: Finalna minimalna slika ---
 FROM python:3.11-slim AS final
 
 WORKDIR /app
 
+# Ažuriramo OS pakete i čistimo keš kako bismo rešili poznate OS ranjivosti
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
 # Kreiramo non-root sistemskog korisnika sa eksplicitnim UID-om radi bezbednosti
 RUN groupadd -g 10001 appgroup && \
     useradd -u 10001 -g appgroup -m -s /sbin/nologin appuser
 
+# ... ostatak Dockerfajla ostaje isti ...
 # Kopiramo instalirane Python pakete i aplikaciju iz builder-a
 COPY --from=builder /root/.local /home/appuser/.local
 COPY app/ /app/app/
