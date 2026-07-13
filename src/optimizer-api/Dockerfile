@@ -1,42 +1,28 @@
-# --- Stage 1: Build zavisnosti ---
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# slim zahteva minimalno gcc za pojedine pakete
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# --- Stage 2: Finalna minimalna slika ---
-FROM python:3.11-slim AS final
-
-WORKDIR /app
-
-# Ažuriramo pakete na Debian slim-u radi bezbednosti OS sloja
+# 1. Ažuriramo pakete na OS nivou radi bezbednosti (Trivy patch)
 RUN apt-get update && \
     apt-get upgrade -y && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /opt/venv /opt/venv
+# 2. Kopiramo requirements i instaliramo zavisnosti direktno
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Kreiramo non-root sistemskog korisnika sa eksplicitnim UID-om
+# 3. Kreiramo non-root sistemskog korisnika sa eksplicitnim UID-om
 RUN groupadd -g 10001 appgroup && \
     useradd -u 10001 -g appgroup -m -s /sbin/nologin appuser
 
+# 4. Kopiramo aplikaciju i postavljamo vlasništvo
 COPY app/ /app/app/
-
-ENV PATH="/opt/venv/bin:$PATH"
-ENV PYTHONPATH=/app
-
 RUN chown -R appuser:appgroup /app
 
+# 5. Prebacujemo izvršavanje na bezbednog korisnika
 USER 10001
+
+ENV PYTHONPATH=/app
 
 EXPOSE 8000
 
